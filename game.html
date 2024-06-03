@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checkers</title>
+<style>
+    .board-container {
+        border: 2px solid black; /* Add border around the squares */
+        display: inline-block;
+    }
+
+    .board {
+        display: grid;
+        grid-template-columns: repeat(8, 50px);
+        grid-template-rows: repeat(8, 50px);
+    }
+
+    .square {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+    }
+
+    .white {
+        background-color: #fff;
+    }
+
+    .lightbrown {
+        background-color: #8B4513;
+        color: #fff;
+    }
+
+    .piece {
+        cursor: pointer;
+    }
+
+    .selected {
+        background-color: yellow;
+    }
+
+    .highlighted {
+        background-color: lightgreen;
+    }
+</style>
+</head>
+<body>
+<div class="board-container">
+    <div class="board" id="board"></div>
+</div>
+<script>
+    const board = document.getElementById('board');
+    let selectedPiece = null;
+    let currentPlayer = 'white'; // White starts first
+
+    function createBoard() {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const square = document.createElement('div');
+                square.classList.add('square');
+                if ((row + col) % 2 === 0) {
+                    square.classList.add('white');
+                } else {
+                    square.classList.add('lightbrown');
+                    if (row < 3) {
+                        square.innerHTML = '●'; // White piece
+                    } else if (row > 4) {
+                        square.innerHTML = '●'; // Light brown piece
+                        square.classList.add('piece');
+                    }
+                }
+                square.dataset.row = row;
+                square.dataset.col = col;
+                square.addEventListener('click', () => selectSquare(row, col));
+                board.appendChild(square);
+            }
+        }
+    }
+
+    function selectSquare(row, col) {
+        const square = document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`);
+        if (square.classList.contains('piece') && currentPlayer === square.innerHTML.toLowerCase()) {
+            if (selectedPiece) {
+                selectedPiece.classList.remove('selected');
+            }
+            square.classList.add('selected');
+            selectedPiece = square;
+            highlightValidMoves(row, col);
+        } else if (selectedPiece) {
+            movePiece(selectedPiece, row, col);
+        }
+    }
+
+    function highlightValidMoves(row, col) {
+        const squares = document.querySelectorAll('.square');
+        squares.forEach(square => square.classList.remove('highlighted'));
+
+        const directions = currentPlayer === 'white' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+
+        for (const [rowDir, colDir] of directions) {
+            const newRow = row + rowDir;
+            const newColLeft = col + colDir;
+            const newColRight = col - colDir;
+            if (isValidMove(newRow, newColLeft)) {
+                const square = document.querySelector(`.square[data-row="${newRow}"][data-col="${newColLeft}"]`);
+                square.classList.add('highlighted');
+            }
+            if (isValidMove(newRow, newColRight)) {
+                const square = document.querySelector(`.square[data-row="${newRow}"][data-col="${newColRight}"]`);
+                square.classList.add('highlighted');
+            }
+        }
+    }
+
+    function isValidMove(row, col) {
+        return row >= 0 && row < 8 && col >= 0 && col < 8 && !document.querySelector(`.square[data-row="${row}"][data-col="${col}"]`).innerHTML;
+    }
+
+    function movePiece(piece, newRow, newCol) {
+        const oldRow = parseInt(piece.dataset.row);
+        const oldCol = parseInt(piece.dataset.col);
+        const newRowDiff = Math.abs(newRow - oldRow);
+        const newColDiff = Math.abs(newCol - oldCol);
+        if (newRowDiff === 1 && (newColDiff === 1 || newColDiff === 0)) {
+            const destination = document.querySelector(`.square[data-row="${newRow}"][data-col="${newCol}"]`);
+            destination.innerHTML = piece.innerHTML;
+            destination.classList.add(piece.classList[1]);
+            piece.innerHTML = '';
+            piece.classList.remove(piece.classList[1]);
+            if (newRow === 0 || newRow === 7) {
+                alert(`${currentPlayer} wins!`);
+                return;
+            }
+            currentPlayer = currentPlayer === 'white' ? 'lightbrown' : 'white';
+        }
+        if (selectedPiece) {
+            selectedPiece.classList.remove('selected');
+            selectedPiece = null;
+            const squares = document.querySelectorAll('.square');
+            squares.forEach(square => square.classList.remove('highlighted'));
+        }
+    }
+
+    createBoard();
+</script>
+</body>
+</html>
